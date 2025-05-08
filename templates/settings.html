@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>Настройки FTP-соединения</h2>
+    
+    <form action="{{ url_for('settings') }}" method="post">
+        <div class="form-group">
+            <label for="host">FTP-сервер:</label>
+            <input type="text" id="host" name="host" value="{{ config.host }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="port">Порт:</label>
+            <input type="number" id="port" name="port" value="{{ config.port }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" value="{{ config.username }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" value="{{ config.password }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="directory">Начальная директория:</label>
+            <input type="text" id="directory" name="directory" value="{{ config.directory }}" required>
+        </div>
+        
+        <button type="submit" class="btn">Сохранить настройки</button>
+    </form>
+</div>
+{% endblock %}

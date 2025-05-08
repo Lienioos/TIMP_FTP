@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>История действий</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Действие</th>
+                <th>Детали</th>
+                <th>Время</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.details }}</td>
+                    <td>{{ log.timestamp }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center;">История действий пуста</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('index') }}" class="btn">Вернуться на главную</a>
+    </div>
+</div>
+{% endblock %}
