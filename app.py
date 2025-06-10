@@ -12,24 +12,19 @@ from functools import wraps
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'key'
 
-# Пути к файлам
 CONFIG_FILE = 'ftp_config.ini'
 USERS_FILE = 'users.json'
 LOGS_FILE = 'logs.json'
 
-# Инициализация JSON файлов для хранения данных
 def init_json_db():
-    # Создаем файл пользователей, если его нет
     if not os.path.exists(USERS_FILE):
         with open(USERS_FILE, 'w') as f:
             json.dump([], f)
     
-    # Создаем файл логов, если его нет
     if not os.path.exists(LOGS_FILE):
         with open(LOGS_FILE, 'w') as f:
             json.dump([], f)
 
-# Функции для работы с пользователями
 def get_users():
     with open(USERS_FILE, 'r') as f:
         return json.load(f)
@@ -54,17 +49,15 @@ def get_user_by_id(user_id):
 
 def add_user(username, password, email=None):
     users = get_users()
-    # Проверка на существующее имя пользователя
+    
     if get_user_by_username(username):
         return False, "Пользователь с таким именем уже существует"
     
-    # Проверка на существующий email
     if email:
         for user in users:
             if user.get('email') == email:
                 return False, "Email уже используется"
     
-    # Создаем нового пользователя
     new_id = 1
     if users:
         new_id = max(user['id'] for user in users) + 1
@@ -81,7 +74,6 @@ def add_user(username, password, email=None):
     save_users(users)
     return True, new_user['id']
 
-# Функции для работы с логами
 def get_logs():
     with open(LOGS_FILE, 'r') as f:
         return json.load(f)
@@ -112,11 +104,9 @@ def get_user_logs(user_id):
     logs = get_logs()
     return [log for log in logs if log['user_id'] == user_id]
 
-# Хеширование пароля
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Декоратор для проверки авторизации
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -126,14 +116,12 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Загрузка конфигурации FTP
 def load_config():
     config = configparser.ConfigParser()
     
-    # If file doesn't exist or is invalid, create it with default values
     if not os.path.exists(CONFIG_FILE):
         config['FTP'] = {
-            'host': '1.1.1.1',
+            'host': '127.0.0.1',
             'port': '21',
             'username': 'lienioos',
             'password': '123123',
@@ -146,7 +134,6 @@ def load_config():
 
     return config
 
-# Функции для работы с FTP
 def connect_ftp():
     config = load_config()
     ftp = FTP()
@@ -173,7 +160,7 @@ def list_ftp_files(ftp, path='.'):
         
         for entry in entries:
             parts = entry.split()
-            # Проверяем, является ли элемент директорией
+            
             if entry.startswith('d'):
                 dirs.append(parts[-1])
             else:
@@ -192,7 +179,6 @@ def list_ftp_files(ftp, path='.'):
         print(f"Error listing files: {e}")
         return {'files': [], 'dirs': [], 'current_path': path, 'error': str(e)}
 
-# Маршруты для авторизации
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -249,7 +235,6 @@ def user_logs():
     logs = get_user_logs(user_id)
     return render_template('logs.html', logs=logs)
 
-# Оригинальные маршруты с добавлением авторизации и логирования
 @app.route('/')
 @login_required
 def index():
@@ -290,18 +275,15 @@ def download(filepath):
     ftp = connect_ftp()
     if ftp:
         try:
-            # Создаем временный файл для загрузки
             temp_file = tempfile.NamedTemporaryFile(delete=False)
             filename = os.path.basename(filepath)
             
-            # Скачиваем файл с FTP-сервера
             with open(temp_file.name, 'wb') as f:
                 ftp.retrbinary(f'RETR {filepath}', f.write)
             
             ftp.quit()
             
             log_action(session['user_id'], 'download', f'Скачивание файла: {filepath}')
-            # Отправляем файл пользователю
             return send_file(temp_file.name, as_attachment=True, download_name=filename)
         except Exception as e:
             flash(f'Ошибка при скачивании файла: {e}', 'error')
@@ -433,11 +415,5 @@ def settings():
         return render_template('settings.html', config=config['FTP'])
 
 if __name__ == '__main__':
-    # Убедимся, что директория для шаблонов существует
-    if not os.path.exists('templates'):
-        os.makedirs('templates')
-    
-    # Инициализация JSON базы данных
     init_json_db()
-    
-    app.run(debug=1)
+    app.run(debug=True, ssl_context=('certs/server.crt', 'certs/server.key'))
